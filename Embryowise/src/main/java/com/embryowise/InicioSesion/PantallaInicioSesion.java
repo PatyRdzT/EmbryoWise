@@ -1,20 +1,20 @@
 package com.embryowise.InicioSesion;
 
+import com.embryowise.ManejoUsuario.OperacionesUsuario;
+import com.embryowise.MensajeTemporal;
 import com.embryowise.Menu.MenuPrincipal;
 import com.embryowise.Registro.PantallaRegistro;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Hyperlink;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
+import java.sql.SQLException;
 import java.util.Objects;
 
 /* -- REFERENCIAS --
@@ -92,6 +92,9 @@ public class PantallaInicioSesion {
                 new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false,
                         false, true, true)); // (2) (3)
 
+        // Se crea la instancia de mensaje temporal para usarla con el botón de login.
+        MensajeTemporal mensajeError = new MensajeTemporal();
+
         /* Se crea el campo para ingresar el nombre de usuario y se le da un texto
          * default, un tamaño y el estilo antes creado. */
         TextField campoUsuario = new TextField(); // (21)
@@ -119,10 +122,34 @@ public class PantallaInicioSesion {
         botonSalir.setPrefSize(200, 50); // (10)
         aplicarEstilo(botonSalir);
 
-        // Se le da la acción de mostrar el menú principal al botón de login.
+        // Se le da la acción de mostrar el menú principal al botón de login, siempre
+        // y cuando las credenciales sean correctas.
         botonLogin.setOnAction(e -> {
-            new MenuPrincipal().mostrar(new Stage());
-            stage.close();
+            // Se obtiene el texto de ambos campos.
+            String usuario = campoUsuario.getText(); // (23)
+            String contrasena = campoContrasena.getText(); // (23)
+
+            // Si alguno de los campos está vacío, se pide al usuario que los complete,
+            // y esto se muestra por 3 segundos.
+            if(usuario.isEmpty() || contrasena.isEmpty()) {
+                mensajeError.mostrarMensaje("Favor de completar todos los campos.", 3);
+
+                return;
+            }
+
+            // Si las credenciales son válidas, se pasa al menú principal, si no, se muestra
+            // el mensaje de que el usuario o la contraseña están incorrectos.
+            try {
+                if(OperacionesUsuario.validarCredenciales(usuario, contrasena)) {
+                    new MenuPrincipal().mostrar(new Stage());
+                    stage.close();
+                } else {
+                    mensajeError.mostrarMensaje("El nombre de usuario o la " +
+                            "contraseña son incorrectos.", 3);
+                }
+            } catch (SQLException ex) {
+                mensajeError.mostrarMensaje("Error al conectar con la base de datos.", 3);
+            }
         });
 
         // Se le da la acción de cerrar la stage al botón de salir.
@@ -151,11 +178,11 @@ public class PantallaInicioSesion {
          *  alinearlo al centro y dar margenes superior de 200px e inferior de 40px. */
         VBox cajaVerticalCampos = new VBox(40, campoUsuario, campoContrasena, linkRegistro); // (15)
         cajaVerticalCampos.setAlignment(Pos.CENTER); // (15)
-        cajaVerticalCampos.setPadding(new Insets(200, 0, 40, 0)); // (10)
+        cajaVerticalCampos.setPadding(new Insets(300, 0, 40, 0)); // (10)
 
-        /* Se crea una caja para guardar los campos y los botones. Además de
+        /* Se crea una caja para guardar los campos, el mensaje de error y los botones. Además de
          *  alinearla al centro y dar margen inferior de 40px. */
-        VBox cajaFinal = new VBox(70, cajaVerticalCampos, cajaHorizontalBotones); // (15)
+        VBox cajaFinal = new VBox(50, cajaVerticalCampos, mensajeError, cajaHorizontalBotones); // (15)
         cajaFinal.setAlignment(Pos.CENTER); // (15)
         cajaFinal.setPadding(new Insets(0, 0, 40, 0)); // (10)
 

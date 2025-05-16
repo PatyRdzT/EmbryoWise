@@ -1,20 +1,22 @@
 package com.embryowise.Registro;
 
 import com.embryowise.InicioSesion.PantallaInicioSesion;
+import com.embryowise.ManejoUsuario.OperacionesUsuario;
+import com.embryowise.MensajeTemporal;
 import com.embryowise.Menu.MenuPrincipal;
+import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Hyperlink;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
+import java.sql.SQLException;
 import java.util.Objects;
 
 /* -- REFERENCIAS --
@@ -91,6 +93,11 @@ public class PantallaRegistro {
                 new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false,
                         false, true, true)); // (2) (3)
 
+        // Se crea la instancia de mensaje temporal como un mensaje informativo y se le da el color verde
+        // para diferenciar de un error.
+        MensajeTemporal mensajeInformativo = new MensajeTemporal();
+        mensajeInformativo.setTextFill(Color.GREEN);
+
         /* Se crea el campo para ingresar el nombre de usuario y se le da un texto
          * default, un tamaño y el estilo antes creado. */
         TextField campoNombre = new TextField(); // (21)
@@ -114,8 +121,47 @@ public class PantallaRegistro {
 
         // Se le da la acción de crear el registro al botón de registro.
         botonRegistro.setOnAction(e -> {
-            new MenuPrincipal().mostrar(new Stage());
-            stage.close();
+            // Se obtiene el texto de ambos campos.
+            String usuario = campoNombre.getText();
+            String contrasena = campoContrasena.getText();
+
+            // Si alguno de los campos está vacío, se pide al usuario que los complete,
+            // y esto se muestra por 3 segundos.
+            if(usuario.isEmpty() || contrasena.isEmpty()) {
+                mensajeInformativo.mostrarMensaje("Favor de completar todos los campos.", 3);
+
+                return;
+            }
+
+            // Si el usuario existe, se marca el mensaje en rojo y se da el mensaje.
+            // Si la contraseña es muy corta, se marca el mensaje en rojo y se da el mensaje.
+            // Si el registro del usuario es correcto, se mantiene en verde y se da el mensaje.
+            // En caso de una excepción, el mensaje se marca en rojo y se envía.
+            try {
+                if(OperacionesUsuario.usuarioExiste(usuario)) {
+                    mensajeInformativo.setTextFill(Color.RED);
+                    mensajeInformativo.mostrarMensaje("El nombre de usuario ya está en uso.", 3);
+                } else if(contrasena.length() < 6) {
+                    mensajeInformativo.setTextFill(Color.RED);
+                    mensajeInformativo.mostrarMensaje("La contraseña debe tener al menos 6 caracteres.", 3);
+                } else if(OperacionesUsuario.registrarUsuario(usuario, contrasena)) {
+                    mensajeInformativo.setTextFill(Color.GREEN);
+                    mensajeInformativo.mostrarMensaje("Registro exitoso. Redirigiendo...", 2);
+
+                    // Se pausa durante dos segundos antes de redirigir a la pantalla de inicio de sesión.
+                    PauseTransition pausa = new PauseTransition(Duration.seconds(2));
+
+                    pausa.setOnFinished(event -> {
+                        new PantallaInicioSesion().mostrar(new Stage());
+                        stage.close();
+                    });
+
+                    pausa.play();
+                }
+            } catch (SQLException ex) {
+                mensajeInformativo.setTextFill(Color.RED);
+                mensajeInformativo.mostrarMensaje("Error al registrar el usuario.", 3);
+            }
         });
 
         // Se crea un hipervínculo de solo texto para ir a la pantalla de registro. Y a
@@ -137,11 +183,11 @@ public class PantallaRegistro {
         VBox campos = new VBox(15, campoNombre, campoContrasena, linkLogin); // (15)
         campos.setAlignment(Pos.CENTER); // (15)
 
-        /* Se crea una caja para guardar los campos y el botón de registro. Además de
+        /* Se crea una caja para guardar los campos, el mensaje y el botón de registro. Además de
          *  alinearlo al centro y dar margenes superior de 200px e inferior de 40px. */
-        VBox contenedorCentral = new VBox(40, campos, botonRegistro); // (15)
+        VBox contenedorCentral = new VBox(40, campos, mensajeInformativo, botonRegistro); // (15)
         contenedorCentral.setAlignment(Pos.CENTER); // (15)
-        contenedorCentral.setPadding(new Insets(200, 0, 40, 0)); // (20)
+        contenedorCentral.setPadding(new Insets(300, 0, 40, 0)); // (20)
 
         /* Se crea el panel principal que contiene a la caja final, la centra, y establece como
          * fondo la imagen antes cargada. */
