@@ -30,6 +30,9 @@ import java.sql.*;
  */
 
 public class OperacionesUsuario {
+    // Variables para guardar el id y nombre del usuario actual.
+    private static int usuarioActualId = -1;
+    private static String usuarioActualNombre = "";
 
     // Método para registrar un nuevo usuario
     public static boolean registrarUsuario(String nombre, String contrasena) throws SQLException {
@@ -40,7 +43,7 @@ public class OperacionesUsuario {
         Connection con = ConexionBaseDeDatos.getConnection();
 
         // Al statement se le pasa la consulta antes creada.
-        PreparedStatement statement = con.prepareStatement(sql);
+        PreparedStatement statement = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
         // Se pasa el índice del parámetro, en este caso 1 y 2 y también se
         // pasa el parámetro.
@@ -49,13 +52,28 @@ public class OperacionesUsuario {
 
         // Si alguna fila fue afectada, se devuelve verdadero.
         int filasAfectadas = statement.executeUpdate();
+
+        if (filasAfectadas > 0) {
+            ResultSet generatedKeys = statement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                usuarioActualId = generatedKeys.getInt(1);
+                usuarioActualNombre = nombre;
+            }
+            generatedKeys.close();
+        }
+
+        // Se cierra el statement y la conexión.
+        statement.close();
+        con.close();
+
+        // Se retorna true si se afectó alguna fila.
         return filasAfectadas > 0;
     }
 
     // Método para verificar credenciales de login
     public static boolean validarCredenciales(String nombre, String contrasena) throws SQLException {
         // Se genera la consulta para verificar si el usuario existe y es correcto.
-        String sql = "SELECT * FROM usuarios WHERE nombre = ? AND contrasena = ?";
+        String sql = "SELECT id FROM usuarios WHERE nombre = ? AND contrasena = ?";
 
         // Se establece la conexión con la base de datos.
         Connection con = ConexionBaseDeDatos.getConnection();
@@ -70,14 +88,27 @@ public class OperacionesUsuario {
 
         // Se ejecuta la consulta para ir buscando por rows con ResultSet, y se devuelve
         // true si encuentra al usuario.
-        ResultSet rs = statement.executeQuery();
-        return rs.next();
+        ResultSet resultado = statement.executeQuery();
+        boolean existe = resultado.next();
+
+        if (existe) {
+            usuarioActualId = resultado.getInt("id");
+            usuarioActualNombre = nombre;
+        }
+
+        // Se cierra el RSet, el statement y la conexión.
+        resultado.close();
+        statement.close();
+        con.close();
+
+        // Se retorna true si el usuario existe.
+        return existe;
     }
 
     // Método para verificar si un usuario ya existe
     public static boolean usuarioExiste(String nombre) throws SQLException {
         // Se genera la consulta para verificar si el usuario existe y es correcto.
-        String sql = "SELECT * FROM usuarios WHERE nombre = ?";
+        String sql = "SELECT 1 FROM usuarios WHERE nombre = ? LIMIT 1";
 
         // Se establece la conexión con la base de datos.
         Connection con = ConexionBaseDeDatos.getConnection();
@@ -91,7 +122,31 @@ public class OperacionesUsuario {
 
         // Se ejecuta la consulta para ir buscando por rows con ResultSet, y se devuelve
         // true si un usuario existe.
-        ResultSet rs = statement.executeQuery();
-        return rs.next();
+        ResultSet resultado = statement.executeQuery();
+        boolean existe = resultado.next();
+
+        // Se cierra el RSet, el statement y la conexión.
+        resultado.close();
+        statement.close();
+        con.close();
+
+        // Se retorna true si el usuario existe.
+        return existe;
+    }
+
+    /** Método para obtener el id del usuario actual. */
+    public static int getUsuarioActualId() {
+        return usuarioActualId;
+    }
+
+    /** Método para obtener el nombre del usuario actual. */
+    public static String getUsuarioActualNombre() {
+        return usuarioActualNombre;
+    }
+
+    /** Método para que al cerrar la sesión se vuelva a los valores declarados inicialmente. */
+    public static void cerrarSesion() {
+        usuarioActualId = -1;
+        usuarioActualNombre = "";
     }
 }

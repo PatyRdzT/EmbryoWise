@@ -3,7 +3,6 @@ package com.embryowise.Registro;
 import com.embryowise.InicioSesion.PantallaInicioSesion;
 import com.embryowise.ManejoUsuario.OperacionesUsuario;
 import com.embryowise.MensajeTemporal;
-import com.embryowise.Menu.MenuPrincipal;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

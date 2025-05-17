@@ -1,5 +1,6 @@
 package com.embryowise.Menu;
 
+import com.embryowise.Cuestionarios.MenuCuestionarios;
 import com.embryowise.EtapasDeDesarrollo.MenuEtapasDesarrollo;
 import com.embryowise.Glosario.GlosarioPantalla;
 import javafx.geometry.Insets;
@@ -66,7 +67,7 @@ public class MenuPrincipal extends MenuBase {
          * Button con la leyenda "Cuestionarios", además se le da la acción de pasar
          * a la pantalla indicada. */
         Button botonCuestionarios = new Button("Cuestionarios"); // (4)
-        //botonCuestionarios.setOnAction(e -> new MenuCuestionarios().mostrar(stage)); // (8)
+        botonCuestionarios.setOnAction(e -> new MenuCuestionarios().mostrar(stage)); // (8)
 
         /* Se crea la variable botonSalir de la clase Button y se le asigna el objeto
          * Button con la leyenda "Salir", además de la acción de salir de la aplicación. */
